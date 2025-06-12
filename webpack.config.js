@@ -69,7 +69,7 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       'process.env': JSON.stringify({
-        REACT_APP_API_URL: 'http://localhost:3001/api'
+        REACT_APP_API_URL: 'http://localhost:8080/api'
       })
     })
   ],
