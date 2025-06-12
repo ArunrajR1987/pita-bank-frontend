@@ -1,8 +1,6 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
-import { combineReducers } from 'redux';
-
 import authReducer from './slices/authSlice';
 import accountReducer from './slices/accountSlice';
 import transactionReducer from './slices/transactionSlice';
@@ -26,9 +24,9 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
-      },
-    }),
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE']
+      }
+    })
 });
 
 export const persistor = persistStore(store);

@@ -1,23 +1,19 @@
-import api from './axios';
-import { AuthRequest, AuthResponse, User } from '../types';
+import axiosInstance from './axios';
 
 export const authApi = {
-  login: async (credentials: AuthRequest): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/api/auth/login', credentials);
-    return response.data;
+  login: (credentials: { email: string; password: string }) => {
+    return axiosInstance.post('/auth/login', credentials);
   },
   
-  register: async (userData: AuthRequest): Promise<string> => {
-    const response = await api.post<string>('/api/auth/register', userData);
-    return response.data;
+  register: (userData: { firstName: string; lastName: string; email: string; password: string }) => {
+    return axiosInstance.post('/auth/register', userData);
   },
   
-  getCurrentUser: async (): Promise<User> => {
-    const response = await api.get<User>('/api/auth/me');
-    return response.data;
+  get: (endpoint: string) => {
+    return axiosInstance.get(`/auth${endpoint}`);
   },
   
-  logout: (): void => {
-    localStorage.removeItem('token');
+  post: (endpoint: string, data: any) => {
+    return axiosInstance.post(`/auth${endpoint}`, data);
   }
 };

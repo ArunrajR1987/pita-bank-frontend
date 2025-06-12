@@ -1,6 +1,15 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { bankApi } from '../../api/bankApi';
-import { Account } from '../../types';
+
+interface Account {
+  id: string;
+  userId: string;
+  accountNumber: string;
+  accountType: string;
+  balance: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface AccountState {
   accounts: Account[];
@@ -16,12 +25,12 @@ const initialState: AccountState = {
 
 export const fetchAccounts = createAsyncThunk(
   'accounts/fetchAccounts',
-  async (customerId: number, { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const accounts = await bankApi.getAccounts(customerId);
-      return accounts;
+      const response = await bankApi.get('/accounts');
+      return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data || 'Failed to fetch accounts');
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch accounts');
     }
   }
 );
@@ -29,11 +38,7 @@ export const fetchAccounts = createAsyncThunk(
 const accountSlice = createSlice({
   name: 'accounts',
   initialState,
-  reducers: {
-    clearAccountError: (state) => {
-      state.error = null;
-    }
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchAccounts.pending, (state) => {
@@ -41,8 +46,8 @@ const accountSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchAccounts.fulfilled, (state, action: PayloadAction<Account[]>) => {
-        state.loading = false;
         state.accounts = action.payload;
+        state.loading = false;
       })
       .addCase(fetchAccounts.rejected, (state, action) => {
         state.loading = false;
@@ -51,5 +56,4 @@ const accountSlice = createSlice({
   }
 });
 
-export const { clearAccountError } = accountSlice.actions;
 export default accountSlice.reducer;

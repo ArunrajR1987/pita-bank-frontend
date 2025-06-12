@@ -1,97 +1,87 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import styled from 'styled-components';
-import { RootState } from '../../store';
+import { useNavigate } from 'react-router-dom';
 import { login, clearError } from '../../store/slices/authSlice';
-import Card from '../../components/ui/Card';
-import Input from '../../components/ui/Input';
+import { RootState } from '../../store';
 import Button from '../../components/ui/Button';
-
-const LoginContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: calc(100vh - 200px);
-`;
-
-const LoginCard = styled(Card)`
-  width: 100%;
-  max-width: 400px;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-`;
-
-const ErrorMessage = styled.div`
-  color: #dc3545;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  background-color: #f8d7da;
-  border-radius: 4px;
-  text-align: center;
-`;
+import Input from '../../components/ui/Input';
+import Card from '../../components/ui/Card';
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated, loading, error } = useSelector((state: RootState) => state.auth);
   
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  
   useEffect(() => {
-    // Clear any previous errors
-    dispatch(clearError());
-    
-    // Redirect if already authenticated
     if (isAuthenticated) {
       navigate('/dashboard');
     }
-  }, [dispatch, isAuthenticated, navigate]);
+    
+    return () => {
+      dispatch(clearError());
+    };
+  }, [isAuthenticated, navigate, dispatch]);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(login({ username, password }));
+    dispatch(login(formData));
   };
   
   return (
-    <LoginContainer>
-      <LoginCard title="Login to Your Account">
-        <Form onSubmit={handleSubmit}>
-          {error && <ErrorMessage>{error}</ErrorMessage>}
+    <div className="auth-container">
+      <Card>
+        <h2>Login to Pita Bank</h2>
+        
+        {error && <div className="error-message">{error}</div>}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Email</label>
+            <Input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter your email"
+              required
+            />
+          </div>
           
-          <Input
-            label="Username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            fullWidth
-          />
+          <div className="form-group">
+            <label>Password</label>
+            <Input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter your password"
+              required
+            />
+          </div>
           
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            fullWidth
-          />
-          
-          <Button 
-            type="submit" 
-            fullWidth 
-            isLoading={loading}
-            disabled={loading}
-          >
-            Login
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
           </Button>
-        </Form>
-      </LoginCard>
-    </LoginContainer>
+        </form>
+        
+        <p className="auth-link">
+          Don't have an account? <a href="/register">Register</a>
+        </p>
+      </Card>
+    </div>
   );
 };
 

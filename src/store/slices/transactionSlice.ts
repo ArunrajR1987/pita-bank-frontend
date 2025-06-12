@@ -1,41 +1,66 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { bankApi } from '../../api/bankApi';
-import { Transaction, TransactionDTO } from '../../types';
+
+interface Account {
+  id: string;
+  accountNumber: string;
+  accountType: string;
+}
+
+interface Transaction {
+  id: string;
+  userId: string;
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  type: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  fromAccount?: Account;
+  toAccount?: Account;
+}
 
 interface TransactionState {
   transactions: Transaction[];
   loading: boolean;
   error: string | null;
-  transferSuccess: boolean;
+}
+
+interface CreateTransactionPayload {
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  description: string;
 }
 
 const initialState: TransactionState = {
   transactions: [],
   loading: false,
-  error: null,
-  transferSuccess: false
+  error: null
 };
 
 export const fetchTransactions = createAsyncThunk(
   'transactions/fetchTransactions',
-  async (accountId: number, { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const transactions = await bankApi.getTransactions(accountId);
-      return transactions;
+      const response = await bankApi.get('/transactions');
+      return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data || 'Failed to fetch transactions');
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch transactions');
     }
   }
 );
 
-export const transferFunds = createAsyncThunk(
-  'transactions/transferFunds',
-  async (transactionData: TransactionDTO, { rejectWithValue }) => {
+export const createTransaction = createAsyncThunk(
+  'transactions/createTransaction',
+  async (transactionData: CreateTransactionPayload, { rejectWithValue }) => {
     try {
-      const result = await bankApi.transfer(transactionData);
-      return result;
+      const response = await bankApi.post('/transactions', transactionData);
+      return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data || 'Transfer failed');
+      return rejectWithValue(error.response?.data?.message || 'Failed to create transaction');
     }
   }
 );
@@ -43,47 +68,34 @@ export const transferFunds = createAsyncThunk(
 const transactionSlice = createSlice({
   name: 'transactions',
   initialState,
-  reducers: {
-    clearTransactionError: (state) => {
-      state.error = null;
-    },
-    resetTransferSuccess: (state) => {
-      state.transferSuccess = false;
-    }
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch Transactions
       .addCase(fetchTransactions.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchTransactions.fulfilled, (state, action: PayloadAction<Transaction[]>) => {
-        state.loading = false;
         state.transactions = action.payload;
+        state.loading = false;
       })
       .addCase(fetchTransactions.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-      
-      // Transfer Funds
-      .addCase(transferFunds.pending, (state) => {
+      .addCase(createTransaction.pending, (state) => {
         state.loading = true;
         state.error = null;
-        state.transferSuccess = false;
       })
-      .addCase(transferFunds.fulfilled, (state) => {
+      .addCase(createTransaction.fulfilled, (state, action: PayloadAction<Transaction>) => {
+        state.transactions = [action.payload, ...state.transactions];
         state.loading = false;
-        state.transferSuccess = true;
       })
-      .addCase(transferFunds.rejected, (state, action) => {
+      .addCase(createTransaction.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-        state.transferSuccess = false;
       });
   }
 });
 
-export const { clearTransactionError, resetTransferSuccess } = transactionSlice.actions;
 export default transactionSlice.reducer;

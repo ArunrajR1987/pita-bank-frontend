@@ -1,0 +1,20 @@
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  image: node:16
+  script:
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - build/
+
+test:
+  stage: test
+  image: node:16
+  script:
+    - npm ci
+    - npm test

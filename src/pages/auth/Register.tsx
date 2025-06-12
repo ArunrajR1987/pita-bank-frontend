@@ -1,131 +1,165 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import styled from 'styled-components';
-import { RootState } from '../../store';
+import { useNavigate } from 'react-router-dom';
 import { register, clearError } from '../../store/slices/authSlice';
-import Card from '../../components/ui/Card';
-import Input from '../../components/ui/Input';
+import { RootState } from '../../store';
 import Button from '../../components/ui/Button';
-
-const RegisterContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: calc(100vh - 200px);
-`;
-
-const RegisterCard = styled(Card)`
-  width: 100%;
-  max-width: 400px;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-`;
-
-const ErrorMessage = styled.div`
-  color: #dc3545;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  background-color: #f8d7da;
-  border-radius: 4px;
-  text-align: center;
-`;
-
-const SuccessMessage = styled.div`
-  color: #28a745;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  background-color: #d4edda;
-  border-radius: 4px;
-  text-align: center;
-`;
+import Input from '../../components/ui/Input';
+import Card from '../../components/ui/Card';
 
 const Register: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, loading, error } = useSelector((state: RootState) => state.auth);
+  
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  
+  const [formErrors, setFormErrors] = useState({
+    password: '',
+    confirmPassword: ''
+  });
   
   useEffect(() => {
-    // Clear any previous errors
-    dispatch(clearError());
-  }, [dispatch]);
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError(null);
-    
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setFormError('Passwords do not match');
-      return;
+    if (isAuthenticated) {
+      navigate('/dashboard');
     }
     
-    try {
-      await dispatch(register({ username, password }));
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
-    } catch (err) {
-      // Error is handled by the reducer
+    return () => {
+      dispatch(clearError());
+    };
+  }, [isAuthenticated, navigate, dispatch]);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+    
+    // Clear validation errors when typing
+    if (name === 'password' || name === 'confirmPassword') {
+      setFormErrors({
+        ...formErrors,
+        [name]: ''
+      });
+    }
+  };
+  
+  const validateForm = () => {
+    let isValid = true;
+    const errors = { ...formErrors };
+    
+    // Password validation
+    if (formData.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters';
+      isValid = false;
+    }
+    
+    // Confirm password validation
+    if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+      isValid = false;
+    }
+    
+    setFormErrors(errors);
+    return isValid;
+  };
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (validateForm()) {
+      const { firstName, lastName, email, password } = formData;
+      dispatch(register({ firstName, lastName, email, password }));
     }
   };
   
   return (
-    <RegisterContainer>
-      <RegisterCard title="Create an Account">
-        <Form onSubmit={handleSubmit}>
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          {formError && <ErrorMessage>{formError}</ErrorMessage>}
-          {success && <SuccessMessage>Registration successful! Redirecting to login...</SuccessMessage>}
+    <div className="auth-container">
+      <Card>
+        <h2>Create an Account</h2>
+        
+        {error && <div className="error-message">{error}</div>}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>First Name</label>
+            <Input
+              type="text"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              placeholder="Enter your first name"
+              required
+            />
+          </div>
           
-          <Input
-            label="Username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            fullWidth
-          />
+          <div className="form-group">
+            <label>Last Name</label>
+            <Input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="Enter your last name"
+              required
+            />
+          </div>
           
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            fullWidth
-          />
+          <div className="form-group">
+            <label>Email</label>
+            <Input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter your email"
+              required
+            />
+          </div>
           
-          <Input
-            label="Confirm Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            fullWidth
-          />
+          <div className="form-group">
+            <label>Password</label>
+            <Input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Create a password"
+              required
+            />
+            {formErrors.password && <p className="error-text">{formErrors.password}</p>}
+          </div>
           
-          <Button 
-            type="submit" 
-            fullWidth 
-            isLoading={loading}
-            disabled={loading || success}
-          >
-            Register
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <Input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm your password"
+              required
+            />
+            {formErrors.confirmPassword && <p className="error-text">{formErrors.confirmPassword}</p>}
+          </div>
+          
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Creating Account...' : 'Register'}
           </Button>
-        </Form>
-      </RegisterCard>
-    </RegisterContainer>
+        </form>
+        
+        <p className="auth-link">
+          Already have an account? <a href="/login">Login</a>
+        </p>
+      </Card>
+    </div>
   );
 };
 

@@ -1,30 +1,19 @@
-import api from './axios';
-import { Account, Transaction, TransactionDTO } from '../types';
+import axiosInstance from './axios';
 
 export const bankApi = {
-  getBalance: async (id: number): Promise<number> => {
-    const response = await api.get<number>(`/bank/balance/${id}`);
-    return response.data;
+  get: (endpoint: string) => {
+    return axiosInstance.get(`/bank${endpoint}`);
   },
   
-  transfer: async (transactionData: TransactionDTO): Promise<string> => {
-    const response = await api.post<string>('/bank/transfer', null, {
-      params: {
-        senderId: transactionData.senderAccountId,
-        receiverId: transactionData.receiverAccountId,
-        amount: transactionData.amount
-      }
-    });
-    return response.data;
+  post: (endpoint: string, data: any) => {
+    return axiosInstance.post(`/bank${endpoint}`, data);
   },
   
-  getAccounts: async (customerId: number): Promise<Account[]> => {
-    const response = await api.get<Account[]>(`/bank/accounts/${customerId}`);
-    return response.data;
+  put: (endpoint: string, data: any) => {
+    return axiosInstance.put(`/bank${endpoint}`, data);
   },
   
-  getTransactions: async (accountId: number): Promise<Transaction[]> => {
-    const response = await api.get<Transaction[]>(`/bank/transactions/${accountId}`);
-    return response.data;
+  delete: (endpoint: string) => {
+    return axiosInstance.delete(`/bank${endpoint}`);
   }
 };
