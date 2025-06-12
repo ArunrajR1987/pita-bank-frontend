@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
+import { AppDispatch, RootState } from '../../store';
 import { fetchAccounts } from '../../store/slices/accountSlice';
 import Card from '../../components/ui/Card';
 
 const Dashboard: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { accounts, loading } = useSelector((state: RootState) => state.accounts);
   const { user } = useSelector((state: RootState) => state.auth);
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
+import { AppDispatch, RootState } from '../../store';
 import { logout } from '../../store/slices/authSlice';
 import Button from '../ui/Button';
 
@@ -50,7 +50,7 @@ const Username = styled.span`
 `;
 
 const Navbar: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
 
@@ -69,7 +69,7 @@ const Navbar: React.FC = () => {
             <NavLink to="/accounts">Accounts</NavLink>
             <NavLink to="/transactions">Transactions</NavLink>
             <UserInfo>
-              <Username>{user?.username}</Username>
+              <Username>{user?.username || user?.firstName}</Username>
               <Button variant="outline" size="small" onClick={handleLogout}>
                 Logout
               </Button>

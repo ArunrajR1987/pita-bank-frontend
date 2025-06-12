@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
+import { AppDispatch, RootState } from '../../store';
 import { fetchTransactions } from '../../store/slices/transactionSlice';
 import Card from '../../components/ui/Card';
 
 const TransactionList: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { transactions, loading } = useSelector((state: RootState) => state.transactions);
 
   useEffect(() => {

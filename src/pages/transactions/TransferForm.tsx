@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
+import { AppDispatch, RootState } from '../../store';
 import { createTransaction } from '../../store/slices/transactionSlice';
 import { fetchAccounts } from '../../store/slices/accountSlice';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
 const TransferForm: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { accounts } = useSelector((state: RootState) => state.accounts);
   const [formData, setFormData] = useState({
     fromAccountId: '',

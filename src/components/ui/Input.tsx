@@ -24,7 +24,10 @@ const InputLabel = styled.label`
   color: #333;
 `;
 
-const StyledInput = styled.input<{ hasError?: boolean }>`
+const StyledInput = styled.input.attrs<{ hasError?: boolean }>(props => ({
+  // This prevents the hasError prop from being passed to the DOM element
+  // Only standard HTML attributes will be passed through
+}))<{ hasError?: boolean }>`
   padding: 0.5rem 0.75rem;
   font-size: 1rem;
   border: 1px solid ${props => props.hasError ? '#dc3545' : '#ced4da'};
