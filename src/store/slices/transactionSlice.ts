@@ -48,7 +48,11 @@ export const fetchTransactions = createAsyncThunk(
       const response = await bankApi.get('/transactions');
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch transactions');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Failed to fetch transactions';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -60,7 +64,11 @@ export const createTransaction = createAsyncThunk(
       const response = await bankApi.post('/transactions', transactionData);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create transaction');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Failed to create transaction';
+      return rejectWithValue(errorMessage);
     }
   }
 );

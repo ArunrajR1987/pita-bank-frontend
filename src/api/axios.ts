@@ -12,7 +12,8 @@ const axiosInstance = axios.create({
 // Add a request interceptor to include auth token
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // Direct access to sessionStorage without abstraction
+    const token = sessionStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,9 +32,11 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Unauthorized - clear token and redirect to login
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       window.location.href = '/login';
     }
+    
+    // Let the error propagate to be handled by components
     return Promise.reject(error);
   }
 );

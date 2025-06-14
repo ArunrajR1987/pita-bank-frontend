@@ -19,6 +19,9 @@ const rootReducer = combineReducers({
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
+// Import middleware when package issues are resolved
+// import { errorMiddleware } from './middleware/errorMiddleware';
+
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
@@ -27,6 +30,8 @@ export const store = configureStore({
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE']
       }
     })
+    // Add middleware when package issues are resolved
+    // .concat(errorMiddleware)
 });
 
 export const persistor = persistStore(store);

@@ -1,82 +1,63 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { register, clearError } from '../../store/slices/authSlice';
 import { AppDispatch, RootState } from '../../store';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
+import { toastError, toastSuccess } from '../../utils/toast';
+import { SecureRegisterForm } from '../../components/SecureForm';
+import { authApi } from '../../api/authApi';
 
 const Register: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { isAuthenticated, loading, error } = useSelector((state: RootState) => state.auth);
   
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
-  
-  const [formErrors, setFormErrors] = useState({
-    password: '',
-    confirmPassword: ''
-  });
-  
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
     }
     
+    // Show error toast if there's an error
+    if (error) {
+      toastError(error);
+    }
+    
     return () => {
       dispatch(clearError());
     };
-  }, [isAuthenticated, navigate, dispatch]);
+  }, [isAuthenticated, navigate, dispatch, error]);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-    
-    // Clear validation errors when typing
-    if (name === 'password' || name === 'confirmPassword') {
-      setFormErrors({
-        ...formErrors,
-        [name]: ''
-      });
-    }
-  };
-  
-  const validateForm = () => {
-    let isValid = true;
-    const errors = { ...formErrors };
-    
-    // Password validation
-    if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
-      isValid = false;
-    }
-    
-    // Confirm password validation
-    if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-      isValid = false;
-    }
-    
-    setFormErrors(errors);
-    return isValid;
-  };
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      const { firstName, lastName, email, password } = formData;
-      dispatch(register({ firstName, lastName, email, password }));
+  // Handle register with encrypted password
+  const handleRegister = async (data: { firstName: string; lastName: string; email: string; password: string }) => {
+    try {
+      // Make direct API call instead of using Redux
+      const response = await authApi.register(data);
+      
+      if (response.data && response.data.token) {
+        // Store token directly
+        sessionStorage.setItem('token', response.data.token);
+        console.log('Token stored directly:', response.data.token);
+        
+        // Verify token was stored
+        const storedToken = sessionStorage.getItem('token');
+        console.log('Verified token in storage:', storedToken);
+        
+        // Show success message
+        toastSuccess('Registration successful!');
+        
+        // Dispatch action to update Redux state
+        dispatch(register(data));
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        console.error('No token in response:', response.data);
+        toastError('Registration successful but no token received');
+      }
+    } catch (err: any) {
+      console.error('Registration failed:', err);
+      toastError(err.response?.data?.message || 'Registration failed');
     }
   };
   
@@ -85,75 +66,9 @@ const Register: React.FC = () => {
       <Card>
         <h2>Create an Account</h2>
         
-        {error && <div className="error-message">{error}</div>}
+        {/* Error messages are now shown via toast notifications */}
         
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>First Name</label>
-            <Input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              placeholder="Enter your first name"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Last Name</label>
-            <Input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              placeholder="Enter your last name"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Email</label>
-            <Input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Password</label>
-            <Input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Create a password"
-              required
-            />
-            {formErrors.password && <p className="error-text">{formErrors.password}</p>}
-          </div>
-          
-          <div className="form-group">
-            <label>Confirm Password</label>
-            <Input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirm your password"
-              required
-            />
-            {formErrors.confirmPassword && <p className="error-text">{formErrors.confirmPassword}</p>}
-          </div>
-          
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Register'}
-          </Button>
-        </form>
+        <SecureRegisterForm onSubmit={handleRegister} loading={loading} />
         
         <p className="auth-link">
           Already have an account? <a href="/login">Login</a>

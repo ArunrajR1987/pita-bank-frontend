@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { authApi } from '../../api/authApi';
+import axiosInstance from '../../api/axios';
+import { storeToken, removeToken } from '../../utils/tokenStorage';
 
 interface User {
   id: string;
@@ -36,8 +38,8 @@ interface AuthResponse {
 
 const initialState: AuthState = {
   user: null,
-  token: localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  token: sessionStorage.getItem('token'),
+  isAuthenticated: !!sessionStorage.getItem('token'),
   loading: false,
   error: null
 };
@@ -47,10 +49,17 @@ export const login = createAsyncThunk(
   async (credentials: LoginPayload, { rejectWithValue }) => {
     try {
       const response = await authApi.post('/login', credentials);
-      localStorage.setItem('token', response.data.token);
+      // Use the dedicated token storage utility
+      if (response.data && response.data.token) {
+        storeToken(response.data.token);
+      }
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Login failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -59,11 +68,25 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData: RegisterPayload, { rejectWithValue }) => {
     try {
-      const response = await authApi.post('/register', userData);
-      localStorage.setItem('token', response.data.token);
+      // Use axiosInstance directly to have more control over the response
+      const response = await axiosInstance.post('/auth/register', userData);
+      console.log('Register API response:', response);
+      
+      // Make sure we're storing the token correctly
+      if (response.data && response.data.token) {
+        // Use the dedicated token storage utility
+        storeToken(response.data.token);
+      } else {
+        console.error('No token received in register response:', response.data);
+      }
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+      console.error('Register API error:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Registration failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -75,7 +98,11 @@ export const getCurrentUser = createAsyncThunk(
       const response = await authApi.get('/me');
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to get user');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Failed to get user';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -83,7 +110,8 @@ export const getCurrentUser = createAsyncThunk(
 export const logout = createAsyncThunk(
   'auth/logout',
   async () => {
-    localStorage.removeItem('token');
+    // Use the dedicated token storage utility
+    removeToken();
     return null;
   }
 );
@@ -120,10 +148,17 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(register.fulfilled, (state, action: PayloadAction<AuthResponse>) => {
+        console.log('Register fulfilled with payload:', action.payload);
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.loading = false;
+        
+        // Double-check token storage
+        if (action.payload.token) {
+          // Use the dedicated token storage utility
+          storeToken(action.payload.token);
+        }
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
@@ -144,7 +179,8 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         state.loading = false;
-        localStorage.removeItem('token');
+        // Use the dedicated token storage utility
+        removeToken();
       })
       
       // Logout

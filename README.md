@@ -12,6 +12,8 @@ A comprehensive React-based banking application frontend with modern web develop
 - [Routing Concepts](#routing-concepts)
 - [API and Asynchronous Concepts](#api-and-asynchronous-concepts)
 - [Build and Development Concepts](#build-and-development-concepts)
+- [Secure Password Handling](#secure-password-handling)
+- [Token Management](#token-management)
 - [Getting Started](#getting-started)
 
 ## Libraries and Dependencies
@@ -50,6 +52,12 @@ A comprehensive React-based banking application frontend with modern web develop
 | Library | Version | Purpose |
 |---------|---------|---------|
 | axios | ^1.4.0 | Promise-based HTTP client for making API requests with features like interceptors, request/response transformation |
+
+### Notifications
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| react-toastify | ^9.1.3 | Toast notification library for React applications, providing customizable, accessible notifications |
 
 ### Build Tools and Other Dependencies
 (See package.json for complete list)
@@ -401,6 +409,26 @@ class ErrorBoundary extends React.Component {
 ```
 **Why used**: Error boundaries catch JavaScript errors in child components, preventing the entire app from crashing.
 
+### 10. Toast Notifications
+
+```jsx
+import { toast } from 'react-toastify';
+
+// Success notification
+toast.success('Transaction completed successfully!');
+
+// Error notification
+toast.error('Failed to process transaction');
+
+// Info notification
+toast.info('Your account balance has been updated');
+
+// Warning notification
+toast.warning('Low balance in your account');
+```
+
+**Why used**: Toast notifications provide non-intrusive feedback to users about the result of their actions or system events, improving user experience without disrupting workflow.
+
 ## CSS and Styling Concepts
 
 ### 1. Styled Components
@@ -521,7 +549,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE']
       }
-    })
+    }).concat(errorMiddleware)
 });
 ```
 **Why used**: The Redux store serves as a single source of truth for application state, making state management predictable and testable.
@@ -587,6 +615,19 @@ const persistConfig = {
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 ```
 **Why used**: Redux Persist saves specified parts of the Redux store to localStorage or other storage engines, preserving state across page refreshes.
+
+### 6. Redux Middleware
+
+```javascript
+export const errorMiddleware: Middleware = () => next => action => {
+  if (action.type.endsWith('/rejected')) {
+    const errorMessage = action.payload || action.error?.message || 'An error occurred';
+    toastError(errorMessage);
+  }
+  return next(action);
+};
+```
+**Why used**: Middleware intercepts actions before they reach reducers, allowing for side effects, logging, error handling, and other cross-cutting concerns.
 
 ## Routing Concepts
 
@@ -675,7 +716,7 @@ const axiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -693,7 +734,7 @@ axiosInstance.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
+      removeToken();
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -739,6 +780,17 @@ if (loading) {
 }
 ```
 **Why used**: Loading states provide feedback to users during asynchronous operations.
+
+### 6. Toast Notifications for API Errors
+
+```javascript
+// In Redux middleware
+if (action.type.endsWith('/rejected')) {
+  const errorMessage = action.payload || action.error?.message || 'An error occurred';
+  toastError(errorMessage);
+}
+```
+**Why used**: Toast notifications provide a consistent, non-intrusive way to display API errors to users, improving user experience by clearly communicating what went wrong.
 
 ## Build and Development Concepts
 
@@ -792,6 +844,62 @@ devServer: {
 }
 ```
 **Why used**: Development servers provide features like hot reloading, proxying API requests, and handling client-side routing.
+
+## Secure Password Handling
+
+### Client-Side Implementation
+
+The application implements secure password handling to prevent exposure of passwords during transmission:
+
+1. **SecureForm Components**:
+   - `SecureLoginForm`: Encrypts passwords before submission
+   - `SecureRegisterForm`: Encrypts passwords and validates form data
+
+2. **Password Encryption**:
+   - Uses Base64 encoding for demonstration purposes
+   - In production, would use a proper encryption library
+
+3. **Form Validation**:
+   - Password strength requirements
+   - Password confirmation matching
+   - Input validation before submission
+
+4. **API Integration**:
+   - Passwords are encrypted before being sent to the server
+   - The server expects encrypted passwords
+
+## Token Management
+
+### Centralized Token Storage
+
+The application implements a centralized token management system:
+
+1. **Token Storage Utility** (`src/utils/tokenStorage.ts`):
+   - `storeToken(token)`: Safely stores authentication tokens in session storage
+   - `getToken()`: Retrieves the token with error handling
+   - `removeToken()`: Removes the token with error handling
+   - `hasToken()`: Checks if a token exists
+
+2. **Session Storage**:
+   - Uses `sessionStorage` instead of `localStorage` for better security
+   - Tokens are cleared when the browser is closed
+   - Provides session-based authentication
+
+3. **API Integration**:
+   - Axios interceptors automatically include the token in all API requests
+   - Response interceptors handle authentication errors (401)
+   - Unauthorized responses trigger token removal and redirect to login
+
+4. **Redux Integration**:
+   - Authentication state is synchronized with token storage
+   - Login and registration store tokens upon success
+   - Logout and authentication errors clear tokens
+
+This implementation ensures:
+- Consistent token handling across the application
+- Proper error handling for token operations
+- Automatic token inclusion in API requests
+- Secure token storage that's cleared when the browser is closed
 
 ## Getting Started
 

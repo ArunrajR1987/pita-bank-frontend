@@ -30,7 +30,11 @@ export const fetchAccounts = createAsyncThunk(
       const response = await bankApi.get('/accounts');
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch accounts');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Failed to fetch accounts';
+      return rejectWithValue(errorMessage);
     }
   }
 );

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from './store';
 import { getCurrentUser } from './store/slices/authSlice';
 import Layout from './components/layout/Layout';
+import ToastContainer from './components/ui/Toast';
 
 // Pages
 import Login from './pages/auth/Login';
@@ -70,6 +71,9 @@ const App: React.FC = () => {
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
+        
+        {/* Toast notifications container */}
+        <ToastContainer />
       </Layout>
     </Router>
   );
