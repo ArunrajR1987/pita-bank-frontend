@@ -1,16 +1,30 @@
-// Utility functions for token management
+/**
+ * Token Storage Utility
+ * 
+ * A centralized utility for managing authentication tokens in session storage.
+ * This provides a consistent interface for storing, retrieving, and removing tokens,
+ * with error handling and logging.
+ */
+
+const TOKEN_KEY = 'auth_token';
 
 /**
  * Store authentication token in session storage
  * @param token The authentication token to store
+ * @returns boolean indicating success
  */
-export const storeToken = (token: string): void => {
+export const storeToken = (token: string): boolean => {
   try {
-    // Direct storage without any abstractions
-    window.sessionStorage.setItem('token', token);
-    console.log('Token stored successfully:', token);
+    if (!token) {
+      console.warn('Attempted to store empty token');
+      return false;
+    }
+    
+    window.sessionStorage.setItem(TOKEN_KEY, token);
+    return true;
   } catch (error) {
     console.error('Error storing token in session storage:', error);
+    return false;
   }
 };
 
@@ -20,9 +34,7 @@ export const storeToken = (token: string): void => {
  */
 export const getToken = (): string | null => {
   try {
-    // Direct retrieval without any abstractions
-    const token = window.sessionStorage.getItem('token');
-    return token;
+    return window.sessionStorage.getItem(TOKEN_KEY);
   } catch (error) {
     console.error('Error retrieving token from session storage:', error);
     return null;
@@ -31,14 +43,15 @@ export const getToken = (): string | null => {
 
 /**
  * Remove authentication token from session storage
+ * @returns boolean indicating success
  */
-export const removeToken = (): void => {
+export const removeToken = (): boolean => {
   try {
-    // Direct removal without any abstractions
-    window.sessionStorage.removeItem('token');
-    console.log('Token removed from session storage');
+    window.sessionStorage.removeItem(TOKEN_KEY);
+    return true;
   } catch (error) {
     console.error('Error removing token from session storage:', error);
+    return false;
   }
 };
 
@@ -48,4 +61,44 @@ export const removeToken = (): void => {
  */
 export const hasToken = (): boolean => {
   return !!getToken();
+};
+
+/**
+ * Get token expiration time
+ * @param token JWT token
+ * @returns Expiration timestamp or null if invalid
+ */
+export const getTokenExpiration = (token: string): number | null => {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    
+    const decoded = JSON.parse(atob(payload));
+    return decoded.exp ? decoded.exp * 1000 : null; // Convert to milliseconds
+  } catch (error) {
+    console.error('Error parsing token expiration:', error);
+    return null;
+  }
+};
+
+/**
+ * Check if token is expired
+ * @returns Boolean indicating if token is expired
+ */
+export const isTokenExpired = (): boolean => {
+  const token = getToken();
+  if (!token) return true;
+  
+  const expiration = getTokenExpiration(token);
+  if (!expiration) return true;
+  
+  return Date.now() > expiration;
+};
+
+export default {
+  storeToken,
+  getToken,
+  removeToken,
+  hasToken,
+  isTokenExpired
 };

@@ -1,39 +1,84 @@
-import axios from 'axios';
+import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { getToken, removeToken, isTokenExpired } from '../utils/tokenStorage';
 
+/**
+ * API base URL from environment variables with fallback
+ */
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
+/**
+ * Axios instance with default configuration
+ */
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 10000 // 10 seconds timeout
 });
 
-// Add a request interceptor to include auth token
+/**
+ * Request interceptor to include auth token and handle token expiration
+ */
 axiosInstance.interceptors.request.use(
-  (config) => {
-    // Direct access to sessionStorage without abstraction
-    const token = sessionStorage.getItem('token');
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+    // Add token to request if available
+    const token = getToken();
+    
     if (token) {
+      // Check if token is expired
+      if (isTokenExpired()) {
+        // Remove expired token
+        removeToken();
+        
+        // Redirect to login if not already there
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login?expired=true';
+        }
+        
+        // Don't add expired token to request
+        return config;
+      }
+      
+      // Add valid token to request headers
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
-  (error) => {
+  (error: AxiosError): Promise<AxiosError> => {
     return Promise.reject(error);
   }
 );
 
-// Add a response interceptor to handle common errors
+/**
+ * Response interceptor to handle common errors
+ */
 axiosInstance.interceptors.response.use(
-  (response) => {
+  (response: AxiosResponse): AxiosResponse => {
     return response;
   },
-  (error) => {
+  (error: AxiosError): Promise<AxiosError> => {
+    // Handle authentication errors
     if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      sessionStorage.removeItem('token');
-      window.location.href = '/login';
+      // Remove token
+      removeToken();
+      
+      // Redirect to login with appropriate message
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login') {
+        window.location.href = '/login?session=expired';
+      }
+    }
+    
+    // Handle server errors
+    if (error.response?.status === 500) {
+      console.error('Server error:', error.response.data);
+    }
+    
+    // Handle network errors
+    if (error.message === 'Network Error') {
+      console.error('Network error - API server may be down');
     }
     
     // Let the error propagate to be handled by components

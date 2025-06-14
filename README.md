@@ -4,6 +4,9 @@ A comprehensive React-based banking application frontend with modern web develop
 
 ## Table of Contents
 - [Libraries and Dependencies](#libraries-and-dependencies)
+- [Application Architecture](#application-architecture)
+- [Data Flow](#data-flow)
+- [State Management](#state-management)
 - [JavaScript Concepts](#javascript-concepts)
 - [TypeScript Concepts](#typescript-concepts)
 - [React Concepts](#react-concepts)
@@ -15,6 +18,16 @@ A comprehensive React-based banking application frontend with modern web develop
 - [Secure Password Handling](#secure-password-handling)
 - [Token Management](#token-management)
 - [Getting Started](#getting-started)
+
+## Application Architecture
+
+The Pita Banking Frontend application follows a modern React architecture with Redux for state management, React Router for navigation, and Axios for API communication.
+
+![Application Architecture](diagrams/data_flow.md)
+
+For a detailed view of the data flow, see the [Data Flow Diagram](diagrams/data_flow.md).
+
+For a detailed view of the state management, see the [Redux State Management Diagram](diagrams/redux_state_management.md).
 
 ## Libraries and Dependencies
 
